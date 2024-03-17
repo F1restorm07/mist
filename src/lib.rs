@@ -26,15 +26,28 @@ pub enum Method {
     Options
 }
 
+impl Default for Method {
+    fn default() -> Self { Self::Get }
+}
+
 pub enum Version {
     V10,
     V11,
     V2,
 }
 
+impl Default for Version {
+    fn default() -> Self { Self::V11 }
+}
+
+#[repr(u16)]
 pub enum StatusCode { // TODO: add Into + From &str with actual codes (200, 404, etc)
-    Ok,
-    NotFound,
+    Ok = 200,
+    NotFound = 404,
+}
+
+impl Default for StatusCode {
+    fn default() -> Self { Self::Ok }
 }
 
 pub enum Header<'h> {
@@ -67,9 +80,9 @@ pub struct Response<'r, B> {
 impl<B> Request<'_, B> {
     pub fn new(body: B) -> Self {
         Self {
-            method: Method::Get,
+            method: Method::default(),
             target: parse_url("/").unwrap(),
-            version: Version::V11,
+            version: Version::default(),
             headers: HashMap::new(),
             body,
         }
@@ -79,8 +92,8 @@ impl<B> Request<'_, B> {
 impl<B> Response<'_, B> {
     pub fn new(body: B) -> Self {
         Self {
-            version: Version::V11,
-            status_code: StatusCode::Ok,
+            version: Version::default(),
+            status_code: StatusCode::default(),
             headers: HashMap::new(),
             body
         }
