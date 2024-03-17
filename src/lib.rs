@@ -3,6 +3,9 @@
 use squid::{ Url, parse_url };
 use hashbrown::HashMap;
 
+mod status_code;
+pub use status_code::StatusCode;
+
 // TODO: add defaults for Url + others in Request and Response
 
 pub enum Method {
@@ -38,16 +41,6 @@ pub enum Version {
 
 impl Default for Version {
     fn default() -> Self { Self::V11 }
-}
-
-#[repr(u16)]
-pub enum StatusCode { // TODO: add Into + From &str with actual codes (200, 404, etc)
-    Ok = 200,
-    NotFound = 404,
-}
-
-impl Default for StatusCode {
-    fn default() -> Self { Self::Ok }
 }
 
 pub enum Header<'h> {
