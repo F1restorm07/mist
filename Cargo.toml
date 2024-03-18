@@ -8,4 +8,4 @@ edition = "2021"
 [dependencies]
 squid = { path = "../squid" }
 
-hashbrown = { version = "0.14.3", default-features = false, features = ["ahash"] }
+hashbrown = { version = "0.14.3", default-features = false, features = ["ahash", "allocator-api2"] }

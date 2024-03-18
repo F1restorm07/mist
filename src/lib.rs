@@ -5,8 +5,8 @@ use hashbrown::HashMap;
 
 mod status_code;
 pub use status_code::StatusCode;
-
-// TODO: add defaults for Url + others in Request and Response
+mod header;
+pub use header::Header;
 
 pub enum Method {
     /// request a representaion of the sepecified resource
@@ -43,17 +43,6 @@ impl Default for Version {
     fn default() -> Self { Self::V11 }
 }
 
-pub enum Header<'h> {
-    Standard(StandardHeader),
-    Custom(&'h [u8])
-}
-
-pub enum StandardHeader {
-    Accept,
-    AcceptEncoding,
-    AcceptLanguage,
-}
-
 pub struct Request<'r, B> {
     method: Method,
     target: Url, // TODO: add path and query type
@@ -64,13 +53,12 @@ pub struct Request<'r, B> {
 
 pub struct Response<'r, B> {
     version: Version,
-    status_code: StatusCode, // ??: matching (or bundling) the status text to the status code
-    // status_text: &'r str,
+    status_code: StatusCode,
     headers: HashMap<Header<'r>, &'r [u8]>,
     body: B
 }
 
-impl<B> Request<'_, B> {
+impl<'r, B> Request<'r, B> {
     pub fn new(body: B) -> Self {
         Self {
             method: Method::default(),
@@ -80,9 +68,21 @@ impl<B> Request<'_, B> {
             body,
         }
     }
+    pub fn method(&mut self, method: Method) { self.method = method; }
+    pub fn url_target(&mut self, target: &str) { self.target = parse_url(target).unwrap(); }
+    pub fn version(&mut self, version: Version) { self.version = version; }
+
+    pub fn add_header<I>(&mut self, header: Header<'r>, value: I)
+        where
+            I: Into<&'r [u8]>
+        { self.headers.insert(header, value.into()); }
+    pub fn add_headers<I>(&mut self, headers: impl IntoIterator<Item = (Header<'r>, I)>)
+        where
+            I: Into<&'r [u8]>
+        { self.headers.extend(headers.into_iter().map(|(h, v)| (h, v.into()) )); }
 }
 
-impl<B> Response<'_, B> {
+impl<'r, B> Response<'r, B> {
     pub fn new(body: B) -> Self {
         Self {
             version: Version::default(),
@@ -91,4 +91,15 @@ impl<B> Response<'_, B> {
             body
         }
     }
+    pub fn version(&mut self, version: Version) { self.version = version; }
+    pub fn status_code(&mut self, code: StatusCode) { self.status_code = code; }
+
+    pub fn add_header<I>(&mut self, header: Header<'r>, value: I)
+        where
+            I: Into<&'r [u8]>
+        { self.headers.insert(header, value.into()); }
+    pub fn add_headers<I>(&mut self, headers: impl IntoIterator<Item = (Header<'r>, I)>)
+        where
+            I: Into<&'r [u8]>
+        { self.headers.extend(headers.into_iter().map(|(h, v)| (h, v.into()) )); }
 }
