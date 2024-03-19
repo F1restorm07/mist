@@ -1,11 +1,23 @@
-#[derive(PartialEq, Eq, Hash)]
-pub enum Header<'h> {
-    Standard(StandardHeader),
-    Custom(&'h [u8])
+// TODO: add from + into &str
+
+pub struct Header<'h> {
+    name: HeaderName<'h>,
+    value: &'h [u8]
+}
+
+impl<'h> Header<'h> {
+    pub fn new(name: HeaderName<'h>, value: impl Into<&'h [u8]>) -> Self {
+        Self { name, value: value.into() }
+    }
+}
+
+pub enum HeaderName<'h> {
+    Standard(StandardHeaderName),
+    Custom(&'h str)
 }
 
 #[derive(PartialEq, Eq, Hash)]
-pub enum StandardHeader {
+pub enum StandardHeaderName {
     Accept,
     AcceptCharset,
     AcceptEncoding,
