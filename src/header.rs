@@ -2,18 +2,28 @@
 
 pub struct Header<'h> {
     name: HeaderName<'h>,
-    value: &'h [u8]
+    value: &'h str
 }
 
 impl<'h> Header<'h> {
-    pub fn new(name: HeaderName<'h>, value: impl Into<&'h [u8]>) -> Self {
-        Self { name, value: value.into() }
+    pub fn new(name: HeaderName<'h>, value: &'h str) -> Self {
+        Self { name, value }
     }
 }
 
 pub enum HeaderName<'h> {
     Standard(StandardHeaderName),
     Custom(&'h str)
+}
+
+impl<'h> From<&'h str> for HeaderName<'h> {
+    fn from(value: &'h str) -> Self {
+        let header: Result<StandardHeaderName, InvalidStandardHeaderName> = value.try_into();
+        match header {
+            Ok(header) => Self::Standard(header),
+            Err(header) => Self::Custom(header.0)
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, Hash)]
@@ -78,13 +88,13 @@ pub enum StandardHeaderName {
     ProxyAuthorization,
     Range,
     Referer,
-    RefererPollicy,
+    RefererPolicy,
     ReportingEndpoints,
     RetryAfter,
     SecFetchDest,
     SecFetchMode,
     SecFetchSite,
-    SecFetchuser,
+    SecFetchUser,
     SecPurpose,
     SecWebsocketAccept,
     Server,
@@ -105,4 +115,101 @@ pub enum StandardHeaderName {
     WWWAuthenticate,
     XContentTypeOptions,
     XFrameOptions
+}
+
+pub struct InvalidStandardHeaderName<'i>(&'i str); // ??: should i include the header name in the error type
+
+impl<'e> TryFrom<&'e str> for StandardHeaderName {
+    type Error = InvalidStandardHeaderName<'e>;
+    fn try_from(value: &'e str) -> Result<Self, Self::Error> {
+        match value {
+            "accept" => Ok(Self::Accept),
+            "accept-charset" => Ok(Self::AcceptCharset),
+            "accept-encoding" => Ok(Self::AcceptEncoding),
+            "accept-language" => Ok(Self::AcceptLanguage),
+            "accept-patch" => Ok(Self::AcceptPatch),
+            "accept-post" => Ok(Self::AcceptPost),
+            "accept-ranges" => Ok(Self::AcceptRanges),
+            "access-control-allow-credentials" => Ok(Self::AccessControlAllowCredentials),
+            "access-control-allow-headers" => Ok(Self::AccessControlAllowHeaders),
+            "access-control-allow-methods" => Ok(Self::AccessControlAllowMethods),
+            "access-control-allow-origin" => Ok(Self::AccessControlAllowOrigin),
+            "access-control-max-age" => Ok(Self::AccessControlMaxAge),
+            "access-control-request-headers" => Ok(Self::AccessControlRequestHeaders),
+            "access-control-request-method" => Ok(Self::AccessControlRequestMethod),
+            "age" => Ok(Self::Age),
+            "allow" => Ok(Self::Allow),
+            "alt-svc" => Ok(Self::AltSvc),
+            "alt-used" => Ok(Self::AltUsed),
+            "authorization" => Ok(Self::Authoritzation),
+            "cache-control" => Ok(Self::CacheControl),
+            "clear-site-data" => Ok(Self::ClearSiteData),
+            "connection" => Ok(Self::Connection),
+            "content-disposition" => Ok(Self::ContentDisposition),
+            "content-encoding" => Ok(Self::ContentEncoding),
+            "content-language" => Ok(Self::ContentLanguage),
+            "content-length" => Ok(Self::ContentLength),
+            "content-location" => Ok(Self::ContentLocation),
+            "content-range" => Ok(Self::ContentRange),
+            "content-security-policy" => Ok(Self::ContentSecurityPolicy),
+            "content-security-policy-report-only" => Ok(Self::ContentSecurityPolicyReportOnly),
+            "content-type" => Ok(Self::ContentType),
+            "cookie" => Ok(Self::Cookie),
+            "cross-origin-embedder-policy" => Ok(Self::CrossOriginEmbedderPolicy),
+            "cross-origin-opener-policy" => Ok(Self::CrossOriginOpenerPolicy),
+            "cross-origin-resource-policy" => Ok(Self::CrossOriginResourcePolicy),
+            "date" => Ok(Self::Date),
+            "device-memory" => Ok(Self::DeviceMemory),
+            "etag" => Ok(Self::Etag),
+            "expect" => Ok(Self::Expect),
+            "expires" => Ok(Self::Expires),
+            "forwarded" => Ok(Self::Forwarded),
+            "from" => Ok(Self::From),
+            "host" => Ok(Self::Host),
+            "if-match" => Ok(Self::IfMatch),
+            "if-modified-since" => Ok(Self::IfModifiedSince),
+            "if-none-match" => Ok(Self::IfNoneMatch),
+            "if-range" => Ok(Self::IfRange),
+            "if-unmodified-since" => Ok(Self::IfUnmodifiedSince),
+            "keep-alive" => Ok(Self::KeepAlive),
+            "last-modified" => Ok(Self::LastModified),
+            "link" => Ok(Self::Link),
+            "location" => Ok(Self::Location),
+            "max-forwards" => Ok(Self::MaxForwards),
+            "origin" => Ok(Self::Origin),
+            "permissions-policy" => Ok(Self::PermissionsPolicy),
+            "proxy-authenticate" => Ok(Self::ProxyAuthenticate),
+            "proxy-authorization" => Ok(Self::ProxyAuthorization),
+            "range" => Ok(Self::Range),
+            "referer" => Ok(Self::Referer),
+            "referer-policy" => Ok(Self::RefererPolicy),
+            "reporting-endpoints" => Ok(Self::ReportingEndpoints),
+            "retry-after" => Ok(Self::RetryAfter),
+            "sec-fetch-dest" => Ok(Self::SecFetchDest),
+            "sec-fetch-mode" => Ok(Self::SecFetchMode),
+            "sec-fetch-site" => Ok(Self::SecFetchSite),
+            "sec-fetch-user" => Ok(Self::SecFetchUser),
+            "sec-purpose" => Ok(Self::SecPurpose),
+            "sec-websocket-accept" => Ok(Self::SecWebsocketAccept),
+            "server" => Ok(Self::Server),
+            "server-timing" => Ok(Self::ServerTiming),
+            "service-worker-navigation-preload" => Ok(StandardHeaderName::ServiceWorkerNavigationPreload),
+            "set-cookie" => Ok(Self::SetCookie),
+            "sourcemap" => Ok(Self::SourceMap),
+            "strict-transport-security" => Ok(StandardHeaderName::StrictTransportSecurity),
+            "te" => Ok(Self::TE),
+            "timing-allow-origin" => Ok(Self::TimingAllowOrigin),
+            "trailer" => Ok(Self::Trailer),
+            "transfer-Encoding" => Ok(Self::TransferEncoding),
+            "upgrade" => Ok(Self::Upgrade),
+            "upgrade-insecure-requests" => Ok(Self::UpgradeInsecureRequests),
+            "user-agent" => Ok(Self::UserAgent),
+            "vary" => Ok(Self::Vary),
+            "via" => Ok(Self::Via),
+            "www-authenticate" => Ok(Self::WWWAuthenticate),
+            "x-content-type-options" => Ok(Self::XContentTypeOptions),
+            "x-frame-options" => Ok(Self::XFrameOptions),
+            h => Err(InvalidStandardHeaderName(h)), // TODO: check for other standardized header names
+        }
+    }
 }
