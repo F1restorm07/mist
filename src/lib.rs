@@ -1,7 +1,6 @@
 #![no_std]
 
-extern crate alloc;
-use alloc::vec::Vec;
+use core::mem::MaybeUninit;
 
 pub use squid::{ Url, parse_url };
 mod status_code;
@@ -48,28 +47,42 @@ impl Default for Version {
     fn default() -> Self { Self::V11 }
 }
 
-pub struct Request<'r, B> {
+pub struct Request<'r, B, const N: usize> {
     method: Method,
     target: Url<'r>, // TODO: add path and query type
     version: Version,
-    headers: Vec<Header<'r>>,
-    body: B
+    headers: [MaybeUninit<Header<'r>>; N],
+    __header_init_count: usize,
+    body: B,
 }
 
-pub struct Response<'r, B> {
+pub struct Response<'r, B, const N: usize> {
     version: Version,
     status_code: StatusCode,
-    headers: Vec<Header<'r>>,
+    headers: [MaybeUninit<Header<'r>>; N],
+    __header_init_count: usize,
     body: B
 }
 
-impl<'r, B> Request<'r, B> {
+impl<'r, B, const N: usize> Request<'r, B, N> {
     pub fn new(body: B) -> Self {
+        const UNINIT: MaybeUninit<Header<'_>> = MaybeUninit::uninit();
         Self {
             method: Method::default(),
             target: parse_url("/").unwrap(),
             version: Version::default(),
-            headers: Vec::new(),
+            headers: [UNINIT; N],
+            __header_init_count: 0,
+            body,
+        }
+    }
+    pub fn new_with_headers(body: B, headers: [MaybeUninit<Header<'r>>; N]) -> Self {
+        Self {
+            method: Method::default(),
+            target: parse_url("/").unwrap(),
+            version: Version::default(),
+            __header_init_count: headers.len(),
+            headers,
             body,
         }
     }
@@ -77,26 +90,54 @@ impl<'r, B> Request<'r, B> {
     pub fn url_target(&mut self, target: &'r str) { self.target = parse_url(target).unwrap(); }
     pub fn version(&mut self, version: Version) { self.version = version; }
 
-    pub fn add_header<I>(&mut self, header: Header<'r>)
-        { self.headers.push(header); }
-    pub fn add_headers<I>(&mut self, headers: impl IntoIterator<Item = Header<'r>>)
-        { self.headers.extend(headers.into_iter()); }
+    pub fn add_header(&mut self, header: Header<'r>) {
+        assert!(self.__header_init_count < N);
+        self.headers[self.__header_init_count].write(header);
+        self.__header_init_count+=1;
+    }
+    pub fn add_headers<I>(&mut self, headers: impl IntoIterator<Item = Header<'r>>) {
+        assert!(self.__header_init_count < N);
+        for header in headers {
+            self.headers[self.__header_init_count].write(header);
+            self.__header_init_count+=1;
+        }
+    }
 }
 
-impl<'r, B> Response<'r, B> {
+impl<'r, B, const N: usize> Response<'r, B, N> {
     pub fn new(body: B) -> Self {
+        const UNINIT: MaybeUninit<Header<'_>> = MaybeUninit::uninit();
         Self {
             version: Version::default(),
             status_code: StatusCode::default(),
-            headers: Vec::new(),
+            headers: [UNINIT; N],
+            __header_init_count: 0,
             body
         }
     }
+    pub fn new_with_headers(body: B, headers: [MaybeUninit<Header<'r>>; N]) -> Self {
+        Self {
+            version: Version::default(),
+            status_code: StatusCode::default(),
+            __header_init_count: headers.len(),
+            headers,
+            body,
+        }
+    }
+
     pub fn version(&mut self, version: Version) { self.version = version; }
     pub fn status_code(&mut self, code: StatusCode) { self.status_code = code; }
 
-    pub fn add_header<I>(&mut self, header: Header<'r>)
-        { self.headers.push(header); }
-    pub fn add_headers<I>(&mut self, headers: impl IntoIterator<Item = Header<'r>>)
-        { self.headers.extend(headers.into_iter()); }
+    pub fn add_header(&mut self, header: Header<'r>) {
+        assert!(self.__header_init_count < N);
+        self.headers[self.__header_init_count].write(header);
+        self.__header_init_count+=1;
+    }
+    pub fn add_headers<I>(&mut self, headers: impl IntoIterator<Item = Header<'r>>) {
+        assert!(self.__header_init_count < N);
+        for header in headers {
+            self.headers[self.__header_init_count].write(header);
+            self.__header_init_count+=1;
+        }
+    }
 }
