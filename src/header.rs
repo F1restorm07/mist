@@ -1,5 +1,3 @@
-// TODO: add from + into &str
-
 pub const EMPTY_HEADER: Header<'_> = Header { name: HeaderName::Custom(""), value: "" };
 
 #[derive(Debug)]
@@ -122,7 +120,8 @@ pub enum StandardHeaderName {
     Via,
     WWWAuthenticate,
     XContentTypeOptions,
-    XFrameOptions
+    XFrameOptions,
+    XXssProtection,
 }
 
 pub struct InvalidStandardHeaderName<'i>(&'i str); // ??: should i include the header name in the error type
@@ -217,7 +216,8 @@ impl<'e> TryFrom<&'e str> for StandardHeaderName {
             "WWW-Authenticate" => Ok(Self::WWWAuthenticate),
             "X-Content-Type-Options" => Ok(Self::XContentTypeOptions),
             "X-Frame-Options" => Ok(Self::XFrameOptions),
-            h => Err(InvalidStandardHeaderName(h)), // TODO: check for other standardized header names
+            "X-XSS-Protection" => Ok(Self::XXssProtection),
+            h => Err(InvalidStandardHeaderName(h)),
         }
     }
 }

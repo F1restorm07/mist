@@ -1,7 +1,5 @@
 #![no_std]
 
-use core::mem::MaybeUninit;
-
 pub use squid::{ Url, parse_url };
 mod status_code;
 mod header;
@@ -78,7 +76,7 @@ impl From<&str> for Version {
     }
 }
 
-pub struct Request<'r, 'h, B/* , const N: usize */> {
+pub struct Request<'r, 'h, B> {
     method: Method,
     target: Url<'r>,
     version: Version,
@@ -98,14 +96,6 @@ impl<B: core::fmt::Debug> core::fmt::Debug for Request<'_, '_, B> {
     }
 }
 
-pub struct Response<'r, B, const N: usize> {
-    version: Version,
-    status_code: StatusCode,
-    headers: [MaybeUninit<Header<'r>>; N],
-    __header_init_count: usize,
-    body: B
-}
-
 impl<'r, 'h, B> Request<'r, 'h, B> {
     pub fn new(body: B, headers: &'h mut [Header<'r>]) -> Self {
         Self {
@@ -122,42 +112,36 @@ impl<'r, 'h, B> Request<'r, 'h, B> {
     pub fn version(&mut self, version: Version) { self.version = version; }
 }
 
-impl<'r, B, const N: usize> Response<'r, B, N> {
-    pub fn new(body: B) -> Self {
-        const UNINIT: MaybeUninit<Header<'_>> = MaybeUninit::uninit();
-        Self {
-            version: Version::default(),
-            status_code: StatusCode::default(),
-            headers: [UNINIT; N],
-            __header_init_count: 0,
-            body
-        }
+pub struct Response<'r, 'h, B> {
+    version: Version,
+    status_code: StatusCode,
+    headers: &'h mut [Header<'r>],
+    body: B
+}
+
+impl<B: core::fmt::Debug> core::fmt::Debug for Response<'_, '_, B> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("Response")
+            .field("version", &self.version)
+            .field("status_code", &self.status_code)
+            .field("headers", &self.headers)
+            .field("body", &self.body)
+            .finish()
     }
-    pub fn new_with_headers(body: B, headers: [MaybeUninit<Header<'r>>; N]) -> Self {
+}
+
+impl<'r, 'h, B> Response<'r, 'h, B> {
+    pub fn new(body: B, headers: &'h mut [Header<'r>]) -> Self {
         Self {
             version: Version::default(),
             status_code: StatusCode::default(),
-            __header_init_count: headers.len(),
             headers,
-            body,
+            body
         }
     }
 
     pub fn version(&mut self, version: Version) { self.version = version; }
     pub fn status_code(&mut self, code: StatusCode) { self.status_code = code; }
-
-    pub fn add_header(&mut self, header: Header<'r>) {
-        assert!(self.__header_init_count < N);
-        self.headers[self.__header_init_count].write(header);
-        self.__header_init_count+=1;
-    }
-    pub fn add_headers(&mut self, headers: impl IntoIterator<Item = Header<'r>>) {
-        assert!(self.__header_init_count < N);
-        for header in headers {
-            self.headers[self.__header_init_count].write(header);
-            self.__header_init_count+=1;
-        }
-    }
 }
 
 // #[cfg(test)]
@@ -179,11 +163,46 @@ impl<'r, B, const N: usize> Response<'r, B, N> {
 //         Content-Type: multipart/form-data; boundary=-12656974\r\n\
 //         Content-Length: 345\r\n\
 //         \r\n\
-//         -1265974\r\n\
+//         -1265974
 //         ";
 //         let mut header_buf = [header::EMPTY_HEADER; 9];
 //         let parsed_request = parse_request(request, &mut header_buf).unwrap();
 //         std::println!("{parsed_request:#?}");
+//         panic!();
+//     }
+//     #[test]
+//     fn parse_full_response() {
+//         let response =
+//         "HTTP/1.1 200 OK\r\n\
+//         Content-Length: 55743\r\n\
+//         Connection: keep-alive\r\n\
+//         Cache-Control: s-maxage=300, public, max-age=0\r\n\
+//         Content-Language: en-US\r\n\
+//         Date: Thu, 06 Dec 2018 17:37:18 GMT\r\n\
+//         ETag: \"2e77ad1dc6ab0b53a2996dfd4653c1c3\"\r\n\
+//         Server: meinheld/0.6.1\r\n\
+//         Strict-Transport-Security: max-age=63072000\r\n\
+//         X-Content-Type-Options: nosniff\r\n\
+//         X-Frame-Options: DENY\r\n\
+//         X-XSS-Protection: 1; mode=block\r\n\
+//         Vary: Accept-Encoding,Cookie\r\n\
+//         Age: 7\r\n\
+//         \r\n\
+//         <!DOCTYPE html>\
+//         <html lang=\"en\">\
+//         <head>\
+//             <meta charset=\"utf-8\">\
+//             <title>A simple webpage</title>\
+//         </head>\
+//         <body>\
+//             <h1>Simple HTML webpage</h1>\
+//             <p>Hello, world!</p>\
+//         </body>\
+//         </html>\
+//         ";
+//         let mut header_buf = [header::EMPTY_HEADER; 13];
+//         let parsed_response = parse_response(response, &mut header_buf).unwrap();
+//         std::println!("{parsed_response:#?}");
 //         panic!();
 //     }
 // }
