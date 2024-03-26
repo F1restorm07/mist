@@ -8,26 +8,27 @@
     - [X] status code
     - [X] uri (url)
     - [X] method
-- [ ] parse http protocol
+- [X] parse http protocol
     - [X] header
     - [X] request
-    - [ ] response
+    - [X] response
     - [X] status code
     - [X] uri (url)
     - [X] method
+- [ ] documentation
 
 ## Features
 - [ ] parse http protocol
     - [X] url parsing (via squid)
 - [ ] construct requests
     - string-based
-    - code-based
+    - code-based (builders?)
 
 ## API
 - [X] Request struct
 - [X] Response struct
 - [X] Request parser
-- [ ] Response parser
+- [X] Response parser
 - [ ] docs for all standard headers and methods
 
 ## Long-term goals
