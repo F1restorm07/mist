@@ -1,7 +1,7 @@
 # Mist Roadmap
 
 ## 0.1.0
-- [ ] implement http protocol
+- [X] implement http protocol
     - [X] header
     - [X] request
     - [X] response
@@ -9,16 +9,16 @@
     - [X] uri (url)
     - [X] method
 - [ ] parse http protocol
-    - [ ] header
-    - [ ] request
+    - [X] header
+    - [X] request
     - [ ] response
-    - [ ] status code
+    - [X] status code
     - [X] uri (url)
-    - [ ] method
+    - [X] method
 
 ## Features
 - [ ] parse http protocol
-    - [ ] url parsing (via squid)
+    - [X] url parsing (via squid)
 - [ ] construct requests
     - string-based
     - code-based
@@ -26,13 +26,12 @@
 ## API
 - [X] Request struct
 - [X] Response struct
-- [ ] Request parser
+- [X] Request parser
 - [ ] Response parser
-- [ ] Header parser
 - [ ] docs for all standard headers and methods
 
 ## Long-term goals
-- [ ] no alloc crate
+- [X] no alloc crate
 - [ ] feature parity with http crate
 - [ ] ability to fully construct headers with code
     - build up status line + headers (w/ values)
